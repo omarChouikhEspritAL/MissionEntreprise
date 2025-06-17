@@ -1,49 +1,50 @@
 package tn.esprit.spring;
 
-import org.junit.After;
-import org.junit.jupiter.api.*;
-import org.junit.runner.RunWith;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import tn.esprit.spring.DAO.Entities.Bloc;
+import tn.esprit.spring.DAO.Repositories.BlocRepository;
+import tn.esprit.spring.DAO.Repositories.ChambreRepository;
+import tn.esprit.spring.DAO.Repositories.FoyerRepository;
+import tn.esprit.spring.Services.Bloc.BlocService;
 
-@RunWith(SpringRunner.class)
-@SpringBootTest
-@TestMethodOrder(MethodOrderer.class)
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
 public class BlocServiceTest {
 
-    @BeforeAll
-    public static void bedore() {
-    }
+    @Mock
+    BlocRepository blocRepository;
 
-    @AfterAll
-    public static void after() {
-    }
+    @Mock
+    ChambreRepository chambreRepository;
 
-    @BeforeEach
-    void beforeEach() {
-    }
+    @Mock
+    FoyerRepository foyerRepository;
 
-    @AfterEach
-    void afterEach() {
-    }
+    @InjectMocks
+    BlocService blocService;
 
     @Test
-    @Order(1)
-    void test() {
-    }
+    void testFindById() {
+        Bloc bloc = Bloc.builder()
+                .idBloc(1L)
+                .nomBloc("Bloc A")
+                .capaciteBloc(10)
+                .build();
 
-    @Test
-    @Order(2)
-    void test3() {
-    }
+        when(blocRepository.findById(1L)).thenReturn(Optional.of(bloc));
 
-    @Test
-    @Order(3)
-    void test4() {
-    }
+        Bloc found = blocService.findById(1L);
 
-    @Test
-    @Order(4)
-    void test2() {
+        assertNotNull(found);
+        assertEquals("Bloc A", found.getNomBloc());
+        verify(blocRepository).findById(1L);
     }
 }
