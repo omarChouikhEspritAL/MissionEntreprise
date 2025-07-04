@@ -10,7 +10,7 @@
             <password>admin</password>
         </server>
         <server>
-            <id>nexus-snapshots</id>
+            <id>nexus</id>
             <username>admin</username>
             <password>admin</password>
         </server>
