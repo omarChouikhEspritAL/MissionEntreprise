@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   foyer-app:
-    image: omarchouikh/foyer-app-repo:${env.DYNAMIC_VERSION}
+    image: omarchouikh/foyer-app-repo:${TAG:-latest}
     container_name: foyer-app
     ports:
       - "8086:8086"
