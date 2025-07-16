@@ -1,0 +1,160 @@
+
+pipeline {
+    agent any
+
+    environment {
+        // Use your actual SonarQube project key and token credential ID
+        SONAR_PROJECT_KEY = 'FoyerApp'
+        SONAR_CREDENTIAL = 'SonarCred'
+        // Nexus settings
+        NEXUS_CREDENTIAL = 'nexusCred'
+        DOCKER_HUB_CREDENTIAL='DokerHubCred'
+        DOCKER_HUB_REPO ='omarchouikh/foyer-app-repo'
+        DOCKER_IMAGE = 'foyer-app'
+        
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/omarChouikhEspritAL/MissionEntreprise.git'
+            }
+        }
+
+        stage('Clean & Compile') {
+            steps {
+                sh 'mvn clean compile'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                sh 'mvn test'
+            }
+        }
+        
+        stage('Test + Coverage') {
+            steps {
+                sh 'mvn test jacoco:report'
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                echo "Running SonarQube analysis"
+                withCredentials([string(credentialsId: "${SONAR_CREDENTIAL}", variable: 'SONAR_TOKEN')]) {
+                    sh """
+                        mvn sonar:sonar \
+                            -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
+                            -Dsonar.login=$SONAR_TOKEN
+                    """
+                }
+            }
+        }
+        
+        stage('Publish Code Coverage') {
+            steps {
+                jacoco execPattern: '**/target/jacoco.exec',
+                      classPattern: '**/target/classes',
+                      sourcePattern: '**/src/main/java',
+                      exclusionPattern: '*/target/test-classes/**/'
+            }
+        }
+        
+        stage('Set Dynamic Version') {
+            steps {
+                script {
+                    def dynamicVersion = "1.4.0.${env.BUILD_NUMBER}"
+                    env.DYNAMIC_VERSION = dynamicVersion
+                    sh "mvn versions:set -DnewVersion=${dynamicVersion} -DgenerateBackupPoms=false"
+                }
+            }
+        }
+
+        stage('Deploy to Nexus') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: "${NEXUS_CREDENTIAL}", 
+                    usernameVariable: 'NEXUS_USERNAME', 
+                    passwordVariable: 'NEXUS_PASSWORD'
+                )]) {
+                    sh '''
+                        mvn deploy -DskipTests --settings settings.xml \
+                        -DaltDeploymentRepository=nexus-releases::default::http://localhost:8081/repository/foyer-repo
+                    '''
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+
+                    // Find the actual JAR file name
+                    def jarFile = sh(script: "ls target/Foyer-*.jar", returnStdout: true).trim()
+                    
+                    sh """
+                        docker build \
+                            --build-arg JAR_FILE=${jarFile} \
+                            -t ${DOCKER_IMAGE}:${env.DYNAMIC_VERSION} .
+                    """
+                }
+            }
+        }
+
+        stage('Push to Docker Hub'){
+            steps{
+                script{
+                 withCredentials([usernamePassword(
+                        credentialsId: "${DOCKER_HUB_CREDENTIAL}",
+                        usernameVariable: 'DOCKER_USERNAME',
+                        passwordVariable: 'DOCKER_PASSWORD'
+                    )]){
+                    sh """
+                        docker tag ${DOCKER_IMAGE}:${env.DYNAMIC_VERSION} ${DOCKER_HUB_REPO}:latest
+                        docker tag ${DOCKER_IMAGE}:${env.DYNAMIC_VERSION} ${DOCKER_HUB_REPO}:${env.DYNAMIC_VERSION}
+                        docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
+                        docker push ${DOCKER_HUB_REPO}:${env.DYNAMIC_VERSION}
+                        docker push ${DOCKER_HUB_REPO}:latest
+                    """
+                } 
+
+            }
+        }
+        }
+        
+        
+        
+        stage('Deploy with Docker Compose') {
+            steps {
+                script {
+                    
+                    // Nettoyer les anciens containers (optionnel mais recommandé en test)
+                    sh 'docker-compose down || true'
+
+                    // Tirer la dernière image depuis Docker Hub
+                    sh "docker pull omarchouikh/foyer-app-repo:${env.DYNAMIC_VERSION}"
+
+                    // Déployer les services
+                    sh 'docker-compose up -d'
+                }
+            }
+        }
+
+
+    }
+
+    post {
+        success {
+            script {
+                echo "✅ Successfully deployed version ${env.DYNAMIC_VERSION} (${DOCKER_IMAGE}) from ${DOCKER_HUB_REPO}"
+            }
+        }
+        failure {
+            script {
+                echo "❌ Échec du pipeline pour la version ${env.DYNAMIC_VERSION}"
+            }
+        }
+    }
+}
