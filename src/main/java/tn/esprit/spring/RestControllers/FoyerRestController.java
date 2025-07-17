@@ -8,6 +8,7 @@ import tn.esprit.spring.DAO.Entities.Universite;
 import tn.esprit.spring.Services.Etudiant.IEtudiantService;
 import tn.esprit.spring.Services.Foyer.IFoyerService;
 import tn.esprit.spring.DAO.Repositories.FoyerRepository;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 
