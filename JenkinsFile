@@ -142,10 +142,44 @@ pipeline {
             }
         }
 
+       stage('Load Test with JMeter') {
+    steps {
+        sh '''
+            export PATH=$PATH:/home/omar/apache-jmeter-5.6.3/bin
+
+            echo "📦 Vérification du fichier JMX..."
+            if [ ! -f ./jmeter-tests/Foyer_Load_Test.jmx ]; then
+              echo "❌ Fichier JMeter manquant : ./jmeter-tests/Foyer_Load_Test.jmx"
+              exit 1
+            fi
+
+            echo "🧹 Nettoyage des anciens rapports..."
+            rm -rf ./jmeter-tests/report
+            rm -f ./jmeter-tests/result.jtl
+            mkdir -p ./jmeter-tests/report
+
+            echo "🚀 Exécution du test de charge JMeter..."
+            jmeter -n \
+                -t ./jmeter-tests/Foyer_Load_Test.jmx \
+                -l ./jmeter-tests/result.jtl \
+                -e -o ./jmeter-tests/report
+
+            echo "✅ Rapport généré dans ./jmeter-tests/report/"
+        '''
+    }
+}
 
     }
 
+
+
     post {
+
+        always {
+            archiveArtifacts artifacts: 'jmeter-tests/report/**', allowEmptyArchive: true
+            echo ">>> Rapport JMeter disponible ici : ${env.BUILD_URL}artifact/jmeter-tests/report/index.html"
+        }
+
         success {
             script {
                 echo "✅ Successfully deployed version ${env.DYNAMIC_VERSION} (${DOCKER_IMAGE}) from ${DOCKER_HUB_REPO}"
