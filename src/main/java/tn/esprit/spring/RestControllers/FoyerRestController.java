@@ -19,10 +19,12 @@ public class FoyerRestController {
     IFoyerService service;
     private final FoyerRepository repository;
 
-    @PostMapping("addOrUpdate")
-    Foyer addOrUpdate(@RequestBody Foyer f) {
-        return service.addOrUpdate(f);
-    }
+    @PostMapping("/addOrUpdate")
+public ResponseEntity<?> addOrUpdate(@RequestBody Foyer foyer) {
+    System.out.println("Received foyer: " + foyer);
+    Foyer saved = repository.save(foyer);
+    return ResponseEntity.ok(saved);
+}
 
     @GetMapping("/findAll")
     public ResponseEntity<?> findAll() {
