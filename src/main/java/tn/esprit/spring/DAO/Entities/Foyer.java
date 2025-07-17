@@ -8,22 +8,32 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-@Entity
-@Table(name = "T_FOYER")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Foyer implements Serializable {
+@Entity
+@Table(name = "t_foyer")
+public class Foyer {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    long idFoyer;
-    String nomFoyer;
-    long capaciteFoyer;
+    @Column(name = "id_foyer") // Must match exact DB column name
+    private Long id;
+    
+    @Column(name = "nom_foyer") // Must match exactly
+    private String nom;
+    
+    @Column(name = "capacite_foyer") // Must match exactly
+    private Long capacite;
+    
+    // Relationships
     @OneToOne(mappedBy = "foyer")
-    Universite universite;
+    @JsonIgnore
+    private Universite universite;
+    
     @OneToMany(mappedBy = "foyer")
-    List<Bloc> blocs= new ArrayList<>();
+    @JsonIgnore
+    private List<Bloc> blocs = new ArrayList<>();
 }
