@@ -8,32 +8,29 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-@Getter
-@Setter
+
+@Entity
+@Table(name = "t_foyer")
+@Getter @Setter 
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@Entity
-@Table(name = "t_foyer")
 public class Foyer {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_foyer") // Must match exact DB column name
-    private Long id;
+    @Column(name = "id_foyer")
+    private Long idFoyer;
     
-    @Column(name = "nom_foyer") // Must match exactly
-    private String nom;
+    @Column(name = "nom_foyer")
+    private String nomFoyer;  // This field exists
     
-    @Column(name = "capacite_foyer") // Must match exactly
-    private Long capacite;
+    @Column(name = "capacite_foyer")
+    private Long capaciteFoyer;
     
     // Relationships
     @OneToOne(mappedBy = "foyer")
-    @JsonIgnore
-    private Universite universite;
-    
+    Universite universite;
     @OneToMany(mappedBy = "foyer")
-    @JsonIgnore
-    private List<Bloc> blocs = new ArrayList<>();
+    List<Bloc> blocs= new ArrayList<>();
 }
