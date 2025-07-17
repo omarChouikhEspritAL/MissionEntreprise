@@ -7,6 +7,7 @@ import tn.esprit.spring.DAO.Entities.Foyer;
 import tn.esprit.spring.DAO.Entities.Universite;
 import tn.esprit.spring.Services.Etudiant.IEtudiantService;
 import tn.esprit.spring.Services.Foyer.IFoyerService;
+import tn.esprit.spring.DAO.Repositories.FoyerRepository;
 
 import java.util.List;
 
@@ -15,15 +16,19 @@ import java.util.List;
 @AllArgsConstructor
 public class FoyerRestController {
     IFoyerService service;
+    private final FoyerRepository repository;
 
     @PostMapping("addOrUpdate")
     Foyer addOrUpdate(@RequestBody Foyer f) {
         return service.addOrUpdate(f);
     }
 
-    @GetMapping("findAll")
-    List<Foyer> findAll() {
-        return service.findAll();
+    @GetMapping("/findAll")
+    public ResponseEntity<?> findAll() {
+        System.out.println("Fetching all foyers...");
+        List<Foyer> result = repository.findAll();
+        System.out.println("Found " + result.size() + " foyers");
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("findById")
